@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               MultiChor
-version:            1.0.0.0
+version:            1.0.1.1
 license-files:
     , LICENSE
     , LICENSE.inherited
@@ -12,7 +12,7 @@ description:
     MultiChor is a library for functional choreographic programming in Haskell.
 
 tested-with:
-    GHC == 9.4.8
+    GHC == 9.4.8, GHC == 9.10.1
 
 extra-doc-files:
     README.md
@@ -26,14 +26,14 @@ common basic-config
     visibility: public
     default-language: GHC2021
     build-depends:
-        , base                 >= 4.16 && < 4.20
+        , base                 >= 4.16 && < 5
         , bytestring           >= 0.11 && < 0.13
         , http-client          >= 0.7  && < 0.8
         , mtl                  >= 2.2.2 && < 3.0
         , servant              >= 0.19 && < 0.21
         , servant-client       >= 0.19 && < 0.21
         , servant-server       >= 0.19 && < 0.21
-        , template-haskell     >= 2.18 && < 2.22
+        , template-haskell     >= 2.18 && < 2.23
         , unordered-containers >= 0.2  && < 0.3
         , warp                 >= 3.3  && < 3.4
     ghc-options:
@@ -52,9 +52,9 @@ common basic-config
                        ,LiberalTypeSynonyms
                        ,TypeFamilies
 
-library choreography
-    import: basic-config
+library
     visibility: public
+    import: basic-config
     hs-source-dirs:   src
     exposed-modules:
         Choreography
@@ -71,71 +71,37 @@ library choreography
 
 common lib-dependent
     import: basic-config
-    build-depends: choreography
+    build-depends: MultiChor
 
-library examples
-    import: lib-dependent
-    hs-source-dirs:   examples
-    build-depends:
-        , async      >= 2.2  && < 2.3
-        , binary               >= 0.8.9.0 && < 0.10.1.0
-        , containers >= 0.6  && < 0.7
-        , cryptonite           >= 0.10  && < 0.31
-        , finite-field >= 0.10.0 && < 0.11.0
-        , split   >= 0.2  && < 0.3
-        , random  >= 1.2  && < 1.3
-        , time    >= 1.11 && < 1.13
-        , transformers >= 0.5  && < 0.7
-        , QuickCheck >= 2.14 && < 3
-    exposed-modules:
-          Bank2PC
-        , Bookseller0Network
-        , Bookseller1Simple
-        , Bookseller2HigherOrder
-        , Bookseller3LocPoly
-        , BooksellerFancy
-        , CardGame
-        , ChooseTeams
-        , DelegationFig20
-        , DiffieHellman
-        , GMWReal
-        , Karatsuba
-        , KVS1Simple
-        , KVS2PrimaryBackup
-        , KVS3HigherOrder
-        , KVS4LocPoly
-        , KVS5Fig17
-        , KVS6SizePoly
-        , KVS7SimplePoly
-        , Lottery
-        , MergeSort
-        , MPCFake
-        , ObliviousTransfer
-        , QuickSort
-        , RingLeader
-        , CLI
-        , Data
+Flag test
+  Description: Enable debug support
+  Default:     False
+  Manual:      True
 
 common example
     import: lib-dependent
-    hs-source-dirs:   examples
-    build-depends:
-        , async      >= 2.2  && < 2.3
-        , binary               >= 0.8.9.0 && < 0.10.1.0
-        -- trying to get hls to work with TestSuite
-        , Cabal >= 3.6.3 && < 3.7
-        , cabal-detailed-quickcheck >= 0.2.0 && < 0.3
-        --
-        , containers >= 0.6  && < 0.7
-        , cryptonite           >= 0.10  && < 0.31
-        , finite-field >= 0.10.0 && < 0.11.0
-        , split   >= 0.2  && < 0.3
-        , random  >= 1.2  && < 1.3
-        , time    >= 1.11 && < 1.13
-        , transformers >= 0.5  && < 0.7
-        , QuickCheck >= 2.14 && < 3
-    other-modules: Data
-                 , CLI
+    if flag(test)
+      buildable: True
+      hs-source-dirs:   examples
+      build-depends:
+          , async      >= 2.2  && < 2.3
+          , binary               >= 0.8.9.0 && < 0.10.1.0
+          -- trying to get hls to work with TestSuite
+          , Cabal >= 3.6.3 && < 3.13
+          --, cabal-detailed-quickcheck >= 0.2.0 && < 0.3
+          --
+          , containers >= 0.6  && < 0.7
+          , cryptonite           >= 0.10  && < 0.31
+          , finite-field >= 0.10.0 && < 0.11.0
+          , split   >= 0.2  && < 0.3
+          , random  >= 1.2  && < 1.3
+          , time    >= 1.11 && < 1.15
+          , transformers >= 0.5  && < 0.7
+          , QuickCheck >= 2.14 && < 3
+      other-modules: Distribution.TestSuite.QuickCheck
+                   , CLI
+    else
+      buildable: False
 
 Test-Suite testExamples
     import: example
