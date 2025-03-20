@@ -19,7 +19,7 @@ locally ::
 
 infix 4 `locally`
 
-locally l m = enclave (l @@ nobody) $ locally' m
+locally l m = conclave (l @@ nobody) $ locally' m
 
 -- | Perform the exact same pure computation in replicate at multiple locations.
 --   The computation can not use anything local to an individual party, including their identity.
@@ -32,7 +32,7 @@ congruently ::
 
 infix 4 `congruently`
 
-congruently ls a = enclave ls $ congruently' a
+congruently ls a = conclave ls $ congruently' a
 
 -- | Unwrap a value known to the entire census.
 naked ::
@@ -45,22 +45,22 @@ naked ownership a = congruently' (\un -> un ownership a)
 -- * Communication
 
 -- | Writing out the first argument to `~>` can be done a few different ways depending on context, represented by this class.
-class (KnownSymbol loc, Integral val) => CanSend struct loc val owners census | struct -> loc val owners census where
+class (KnownSymbol loc) => CanSend struct loc val owners census | struct -> loc val owners census where
   presentToSend :: struct -> Member loc census
   ownsMessagePayload :: struct -> Member loc owners
   structMessagePayload :: struct -> Located owners val
 
-instance (KnownSymbol l, Integral a) => CanSend (Member l ps, (Member l ls, Located ls a)) l a ls ps where
+instance (KnownSymbol l) => CanSend (Member l ps, (Member l ls, Located ls a)) l a ls ps where
   presentToSend = fst
   ownsMessagePayload = fst . snd
   structMessagePayload = snd . snd
 
-instance (KnownSymbol l, ExplicitMember l ls, Integral a) => CanSend (Member l ps, Located ls a) l a ls ps where
+instance (KnownSymbol l, ExplicitMember l ls) => CanSend (Member l ps, Located ls a) l a ls ps where
   presentToSend = fst
   ownsMessagePayload = const explicitMember
   structMessagePayload = snd
 
-instance (KnownSymbol l, Integral a) => CanSend (Member l ls, Subset ls ps, Located ls a) l a ls ps where
+instance (KnownSymbol l) => CanSend (Member l ls, Subset ls ps, Located ls a) l a ls ps where
   presentToSend (m, s, _) = inSuper s m
   ownsMessagePayload (m, _, _) = m
   structMessagePayload (_, _, p) = p
@@ -68,14 +68,14 @@ instance (KnownSymbol l, Integral a) => CanSend (Member l ls, Subset ls ps, Loca
 -- | Send a value from one party to the entire census.
 broadcast ::
   forall l a ps ls m s.
-  (Show a, Read a, KnownSymbol l, KnownSymbols ps, CanSend s l a ls ps, Integral a) =>
+  (Show a, Read a, KnownSymbol l, KnownSymbols ps, CanSend s l a ls ps) =>
   s ->
   Choreo ps m a
 broadcast s = broadcast' (presentToSend s) (ownsMessagePayload s, structMessagePayload s)
 
 -- | Communication between a sender and a list of receivers.
 (~>) ::
-  (Show a, Read a, KnownSymbol l, KnownSymbols ls', CanSend s l a ls ps, Integral a) =>
+  (Show a, Read a, KnownSymbol l, KnownSymbols ls', CanSend s l a ls ps) =>
   -- | The message argument can take three forms:
   --
   --   >  (Member sender census, wrapped owners a) -- where sender is explicitly listed in owners
@@ -91,22 +91,22 @@ broadcast s = broadcast' (presentToSend s) (ownsMessagePayload s, structMessageP
 infix 4 ~>
 
 s ~> rs = do
-  x :: a <- enclave (presentToSend s @@ rs) $ broadcast' First (ownsMessagePayload s, structMessagePayload s)
+  x :: a <- conclave (presentToSend s @@ rs) $ broadcast' First (ownsMessagePayload s, structMessagePayload s)
   congruently rs (\un -> un consSet x)
 
--- * Enclaves
+-- * Conclaves
 
 -- | Lift a choreography involving fewer parties into the larger party space.
---   This version, where the returned value is Located at the entire enclave, does not add a Located layer.
-enclaveToAll :: forall ls a ps m. (KnownSymbols ls) => Subset ls ps -> Choreo ls m (Located ls a) -> Choreo ps m (Located ls a)
+--   This version, where the returned value is Located at the entire conclave, does not add a Located layer.
+conclaveToAll :: forall ls a ps m. (KnownSymbols ls) => Subset ls ps -> Choreo ls m (Located ls a) -> Choreo ps m (Located ls a)
 
-infix 4 `enclaveToAll`
+infix 4 `conclaveToAll`
 
-enclaveToAll = (`enclaveTo` (refl @ls))
+conclaveToAll = (`conclaveTo` (refl @ls))
 
 -- | Lift a choreography of involving fewer parties into the larger party space.
 --   This version, where the returned value is already Located, does not add a Located layer.
-enclaveTo ::
+conclaveTo ::
   forall ls a rs ps m.
   (KnownSymbols ls) =>
   Subset ls ps ->
@@ -114,6 +114,6 @@ enclaveTo ::
   Choreo ls m (Located rs a) ->
   Choreo ps m (Located rs a)
 
-infix 4 `enclaveTo`
+infix 4 `conclaveTo`
 
-enclaveTo subcensus recipients ch = flatten recipients (refl @rs) <$> (subcensus `enclave` ch)
+conclaveTo subcensus recipients ch = flatten recipients (refl @rs) <$> (subcensus `conclave` ch)
