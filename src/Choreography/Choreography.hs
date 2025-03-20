@@ -50,7 +50,7 @@ class (KnownSymbol loc, Integral val) => CanSend struct loc val owners census | 
   ownsMessagePayload :: struct -> Member loc owners
   structMessagePayload :: struct -> Located owners val
 
-instance (KnownSymbol l, Integral a) => CanSend (Member l ps, Located ls a) l a ls ps where
+instance (KnownSymbol l, Integral a) => CanSend (Member l ps, (Member l ls, Located ls a)) l a ls ps where
   presentToSend = fst
   ownsMessagePayload = fst . snd
   structMessagePayload = snd . snd
