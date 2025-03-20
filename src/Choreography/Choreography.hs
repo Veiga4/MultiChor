@@ -45,22 +45,22 @@ naked ownership a = congruently' (\un -> un ownership a)
 -- * Communication
 
 -- | Writing out the first argument to `~>` can be done a few different ways depending on context, represented by this class.
-class (KnownSymbol loc) => CanSend struct loc val owners census | struct -> loc val owners census where
+class (KnownSymbol loc, Integral val) => CanSend struct loc val owners census | struct -> loc val owners census where
   presentToSend :: struct -> Member loc census
   ownsMessagePayload :: struct -> Member loc owners
   structMessagePayload :: struct -> Located owners val
 
-instance (KnownSymbol l) => CanSend (Member l ps, (Member l ls, Located ls a)) l a ls ps where
+instance (KnownSymbol l, Integral a) => CanSend (Member l ps, Located ls a) l a ls ps where
   presentToSend = fst
   ownsMessagePayload = fst . snd
   structMessagePayload = snd . snd
 
-instance (KnownSymbol l, ExplicitMember l ls) => CanSend (Member l ps, Located ls a) l a ls ps where
+instance (KnownSymbol l, ExplicitMember l ls, Integral a) => CanSend (Member l ps, Located ls a) l a ls ps where
   presentToSend = fst
   ownsMessagePayload = const explicitMember
   structMessagePayload = snd
 
-instance (KnownSymbol l) => CanSend (Member l ls, Subset ls ps, Located ls a) l a ls ps where
+instance (KnownSymbol l, Integral a) => CanSend (Member l ls, Subset ls ps, Located ls a) l a ls ps where
   presentToSend (m, s, _) = inSuper s m
   ownsMessagePayload (m, _, _) = m
   structMessagePayload (_, _, p) = p
@@ -68,14 +68,14 @@ instance (KnownSymbol l) => CanSend (Member l ls, Subset ls ps, Located ls a) l 
 -- | Send a value from one party to the entire census.
 broadcast ::
   forall l a ps ls m s.
-  (Show a, Read a, KnownSymbol l, KnownSymbols ps, CanSend s l a ls ps) =>
+  (Show a, Read a, KnownSymbol l, KnownSymbols ps, CanSend s l a ls ps, Integral a) =>
   s ->
   Choreo ps m a
 broadcast s = broadcast' (presentToSend s) (ownsMessagePayload s, structMessagePayload s)
 
 -- | Communication between a sender and a list of receivers.
 (~>) ::
-  (Show a, Read a, KnownSymbol l, KnownSymbols ls', CanSend s l a ls ps) =>
+  (Show a, Read a, KnownSymbol l, KnownSymbols ls', CanSend s l a ls ps, Integral a) =>
   -- | The message argument can take three forms:
   --
   --   >  (Member sender census, wrapped owners a) -- where sender is explicitly listed in owners
