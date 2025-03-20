@@ -19,7 +19,7 @@ locally ::
 
 infix 4 `locally`
 
-locally l m = conclave (l @@ nobody) $ locally' m
+locally l m = enclave (l @@ nobody) $ locally' m
 
 -- | Perform the exact same pure computation in replicate at multiple locations.
 --   The computation can not use anything local to an individual party, including their identity.
@@ -32,7 +32,7 @@ congruently ::
 
 infix 4 `congruently`
 
-congruently ls a = conclave ls $ congruently' a
+congruently ls a = enclave ls $ congruently' a
 
 -- | Unwrap a value known to the entire census.
 naked ::
@@ -91,13 +91,13 @@ broadcast s = broadcast' (presentToSend s) (ownsMessagePayload s, structMessageP
 infix 4 ~>
 
 s ~> rs = do
-  x :: a <- conclave (presentToSend s @@ rs) $ broadcast' First (ownsMessagePayload s, structMessagePayload s)
+  x :: a <- enclave (presentToSend s @@ rs) $ broadcast' First (ownsMessagePayload s, structMessagePayload s)
   congruently rs (\un -> un consSet x)
 
--- * Conclaves
+-- * Enclaves
 
 -- | Lift a choreography involving fewer parties into the larger party space.
---   This version, where the returned value is Located at the entire conclave, does not add a Located layer.
+--   This version, where the returned value is Located at the entire enclave, does not add a Located layer.
 conclaveToAll :: forall ls a ps m. (KnownSymbols ls) => Subset ls ps -> Choreo ls m (Located ls a) -> Choreo ps m (Located ls a)
 
 infix 4 `conclaveToAll`
@@ -116,4 +116,4 @@ conclaveTo ::
 
 infix 4 `conclaveTo`
 
-conclaveTo subcensus recipients ch = flatten recipients (refl @rs) <$> (subcensus `conclave` ch)
+conclaveTo subcensus recipients ch = flatten recipients (refl @rs) <$> (subcensus `enclave` ch)
