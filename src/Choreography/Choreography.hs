@@ -98,15 +98,15 @@ s ~> rs = do
 
 -- | Lift a choreography involving fewer parties into the larger party space.
 --   This version, where the returned value is Located at the entire enclave, does not add a Located layer.
-conclaveToAll :: forall ls a ps m. (KnownSymbols ls) => Subset ls ps -> Choreo ls m (Located ls a) -> Choreo ps m (Located ls a)
+enclaveToAll :: forall ls a ps m. (KnownSymbols ls) => Subset ls ps -> Choreo ls m (Located ls a) -> Choreo ps m (Located ls a)
 
-infix 4 `conclaveToAll`
+infix 4 `enclaveToAll`
 
-conclaveToAll = (`conclaveTo` (refl @ls))
+enclaveToAll = (`enclaveTo` (refl @ls))
 
 -- | Lift a choreography of involving fewer parties into the larger party space.
 --   This version, where the returned value is already Located, does not add a Located layer.
-conclaveTo ::
+enclaveTo ::
   forall ls a rs ps m.
   (KnownSymbols ls) =>
   Subset ls ps ->
@@ -114,6 +114,6 @@ conclaveTo ::
   Choreo ls m (Located rs a) ->
   Choreo ps m (Located rs a)
 
-infix 4 `conclaveTo`
+infix 4 `enclaveTo`
 
-conclaveTo subcensus recipients ch = flatten recipients (refl @rs) <$> (subcensus `enclave` ch)
+enclaveTo subcensus recipients ch = flatten recipients (refl @rs) <$> (subcensus `enclave` ch)
