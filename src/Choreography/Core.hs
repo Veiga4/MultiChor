@@ -17,7 +17,7 @@ module Choreography.Core
     runChoreo,
 
     -- * Located values
-    Located (),
+    Located (..),
     Unwrap,
     Unwraps,
     flatten,
